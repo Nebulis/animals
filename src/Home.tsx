@@ -70,7 +70,7 @@ const style = css`
   }
 `;
 
-const App: React.FC = () => {
+export const Home: React.FC = () => {
   const [animal, setAnimal] = useState<Animal | undefined>(elephant);
   return (
     <div css={style}>
@@ -111,5 +111,3 @@ const App: React.FC = () => {
     </div>
   );
 };
-
-export default App;
