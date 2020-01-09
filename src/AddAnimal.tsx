@@ -1,9 +1,9 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { CountryPath, World } from "./world/country";
 import { Country } from "./world/type";
 /** @jsx jsx */
 import { jsx, css } from "@emotion/core";
-import { animalsDatabase } from "./firebase";
+import { Animal, animalsDatabase } from "./firebase";
 
 const classes = ["Mammifères", "Mammifères Marins", "Oiseaux", "Reptiles"];
 const families = ["Canidés", "Félidés"];
@@ -24,11 +24,52 @@ const style = css`
   }
 `;
 export const AddAnimal: React.FunctionComponent = () => {
+  const [id, setId] = useState("");
   const [name, setName] = useState("");
   const [clazz, setClazz] = useState("");
   const [family, setFamily] = useState("");
-  const [hover, setHover] = useState<Country | undefined>();
   const [countries, setCountries] = useState<Set<Country>>(new Set());
+  const [hover, setHover] = useState<Country | undefined>();
+  const [isSaving, setIsSaving] = useState(false);
+  const [selectedAnimal, setSelectedAnimal] = useState<Animal | undefined>();
+  const [animals, setAnimals] = useState<Animal[]>([]);
+
+  // TODO make sure to load once
+  // load animals
+  useEffect(() => {
+    animalsDatabase.get().then(snapshot => {
+      setAnimals(
+        // @ts-ignore
+        snapshot.docs.map(d => {
+          return {
+            ...d.data(),
+            id: d.id
+          };
+        })
+      );
+    });
+  }, []);
+
+  useEffect(() => {
+    if (selectedAnimal) {
+      setId(selectedAnimal.id);
+      setName(selectedAnimal.name);
+      setCountries(new Set(selectedAnimal.countries));
+      setClazz(selectedAnimal.clazz);
+      setFamily(selectedAnimal.family);
+    } else {
+      reset();
+    }
+  }, [selectedAnimal]);
+
+  const reset = () => {
+    setSelectedAnimal(undefined); // TODO this does not work :)
+    setId("");
+    setName("");
+    setClazz("");
+    setFamily("");
+    setCountries(new Set());
+  };
 
   const formValid = name && clazz && countries.size > 1;
   return (
@@ -59,34 +100,76 @@ export const AddAnimal: React.FunctionComponent = () => {
       <form className="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4 md:w-1/4">
         <div className="flex justify-center mb-3">
           <button
-            disabled={!formValid}
+            disabled={!formValid || isSaving}
             className={`bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center mr-2 ${
-              !formValid ? "opacity-50 cursor-not-allowed" : ""
+              !formValid || isSaving ? "opacity-50 cursor-not-allowed" : ""
             }`}
             onClick={event => {
               event.stopPropagation();
               event.preventDefault();
-
-              animalsDatabase
-                .add({
-                  name,
-                  family,
-                  clazz,
-                  countries: [...countries]
-                })
-                .then(() => {
-                  setName("");
-                  setClazz("");
-                  setFamily("");
-                  setCountries(new Set());
-                });
+              setIsSaving(true);
+              if (id) {
+                animalsDatabase
+                  .doc(id)
+                  .set({
+                    name,
+                    family,
+                    clazz,
+                    countries: [...countries]
+                  })
+                  .then(() => {
+                    reset();
+                    setIsSaving(false);
+                  })
+                  .catch(error => {
+                    console.error(error);
+                    setIsSaving(false);
+                  });
+              } else {
+                animalsDatabase
+                  .add({
+                    name,
+                    family,
+                    clazz,
+                    countries: [...countries]
+                  })
+                  .then(() => {
+                    reset();
+                    setIsSaving(false);
+                  })
+                  .catch(error => {
+                    console.error(error);
+                    setIsSaving(false);
+                  });
+              }
             }}
           >
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" className="fill-current w-4 h-4 mr-2">
               <path d="M433.941 129.941l-83.882-83.882A48 48 0 0 0 316.118 32H48C21.49 32 0 53.49 0 80v352c0 26.51 21.49 48 48 48h352c26.51 0 48-21.49 48-48V163.882a48 48 0 0 0-14.059-33.941zM224 416c-35.346 0-64-28.654-64-64 0-35.346 28.654-64 64-64s64 28.654 64 64c0 35.346-28.654 64-64 64zm96-304.52V212c0 6.627-5.373 12-12 12H76c-6.627 0-12-5.373-12-12V108c0-6.627 5.373-12 12-12h228.52c3.183 0 6.235 1.264 8.485 3.515l3.48 3.48A11.996 11.996 0 0 1 320 111.48z" />
             </svg>
-            Save
+            {isSaving ? "Saving..." : id ? "Update" : "Create"}
           </button>
+        </div>
+        <div className="inline-block relative w-full mb-3 max-w-xl">
+          <select
+            className="bg-gray-200 block appearance-none border-2 border-gray-200 px-4 py-2 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-teal-500 w-full"
+            value={selectedAnimal?.name}
+            onChange={event => {
+              setSelectedAnimal(animals.find(a => a.name === event.target.value));
+            }}
+          >
+            <option value="">Sélectionner un animal a editer</option>
+            {animals.map((animal, index) => (
+              <option key={index} value={animal.name}>
+                {animal.name}
+              </option>
+            ))}
+          </select>
+          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+            <svg className="fill-current h-4 w-4" viewBox="0 0 20 20">
+              <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+            </svg>
+          </div>
         </div>
         <div className="mb-3">
           <input

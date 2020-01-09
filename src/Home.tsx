@@ -2,13 +2,7 @@ import React, { useEffect, useState } from "react";
 /** @jsx jsx */
 import { jsx, css } from "@emotion/core";
 import { CountryPath, World } from "./world/country";
-import { Country } from "./world/type";
-import { animalsDatabase } from "./firebase";
-
-interface Animal {
-  name: string;
-  countries: Country[];
-}
+import { Animal, animalsDatabase } from "./firebase";
 
 const style = css`
   label {
