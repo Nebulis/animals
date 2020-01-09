@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { CountryPath, World } from "./world/country";
 import { Country } from "./world/type";
 /** @jsx jsx */
 import { jsx, css } from "@emotion/core";
 import { Animal, animalsDatabase } from "./firebase";
+import { AnimalContext } from "./AnimalContext";
 
 const classes = ["Mammifères", "Mammifères Marins", "Oiseaux", "Reptiles"];
 const families = ["Canidés", "Félidés"];
@@ -32,23 +33,7 @@ export const AddAnimal: React.FunctionComponent = () => {
   const [hover, setHover] = useState<Country | undefined>();
   const [isSaving, setIsSaving] = useState(false);
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | undefined>();
-  const [animals, setAnimals] = useState<Animal[]>([]);
-
-  // TODO make sure to load once
-  // load animals
-  useEffect(() => {
-    animalsDatabase.get().then(snapshot => {
-      setAnimals(
-        // @ts-ignore
-        snapshot.docs.map(d => {
-          return {
-            ...d.data(),
-            id: d.id
-          };
-        })
-      );
-    });
-  }, []);
+  const animals = useContext(AnimalContext);
 
   useEffect(() => {
     if (selectedAnimal) {
@@ -71,7 +56,7 @@ export const AddAnimal: React.FunctionComponent = () => {
     setCountries(new Set());
   };
 
-  const formValid = name && clazz && countries.size > 1;
+  const formValid = name && clazz && countries.size > 0;
   return (
     <div className="md:flex" css={style}>
       <div className="md:w-3/4">
@@ -150,7 +135,7 @@ export const AddAnimal: React.FunctionComponent = () => {
             {isSaving ? "Saving..." : id ? "Update" : "Create"}
           </button>
         </div>
-        <div className="inline-block relative w-full mb-3 max-w-xl">
+        <div className="inline-block relative w-full mb-3">
           <select
             className="bg-gray-200 block appearance-none border-2 border-gray-200 px-4 py-2 pr-8 rounded leading-tight focus:outline-none focus:bg-white focus:border-teal-500 w-full"
             value={selectedAnimal?.name}

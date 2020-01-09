@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
 /** @jsx jsx */
 import { jsx, css } from "@emotion/core";
 import { CountryPath, World } from "./world/country";
-import { Animal, animalsDatabase } from "./firebase";
+import { Animal } from "./firebase";
+import { AnimalContext } from "./AnimalContext";
 
 const style = css`
   label {
@@ -14,14 +15,8 @@ const style = css`
 `;
 
 export const Home: React.FC = () => {
+  const animals = useContext(AnimalContext);
   const [selectedAnimal, setSelectedAnimal] = useState<Animal | undefined>();
-  const [animals, setAnimals] = useState<Animal[]>([]);
-  useEffect(() => {
-    animalsDatabase.get().then(snapshot => {
-      // @ts-ignore
-      setAnimals(snapshot.docs.map(d => d.data()));
-    });
-  }, []);
   return (
     <div css={style}>
       <div className="animals mt-4 text-2xl flex justify-center">

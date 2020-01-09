@@ -1,5 +1,6 @@
 import * as firebase from "firebase/app";
 import "firebase/firestore";
+import "firebase/auth";
 import { Country } from "./world/type";
 
 firebase.initializeApp({
@@ -18,3 +19,20 @@ export interface Animal {
 
 export const db = firebase.firestore();
 export const animalsDatabase = db.collection("animals");
+
+const provider = new firebase.auth.GoogleAuthProvider();
+
+export const login = () => {
+  return firebase
+    .auth()
+    .setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+    .then(() => firebase.auth().signInWithPopup(provider))
+    .catch(error => {
+      // TODO
+      console.error(error);
+    });
+};
+
+export const logout = () => {
+  return firebase.auth().signOut();
+};
